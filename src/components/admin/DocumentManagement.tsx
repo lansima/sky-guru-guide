@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Upload, FileUp, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, FileUp, Loader2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAircraft } from "@/hooks/useAircraft";
 import { useDocuments, Document } from "@/hooks/useDocuments";
@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const DOCUMENT_CATEGORIES = [
   "manual",
@@ -59,6 +60,11 @@ interface DocumentFormData {
   description: string;
   pdf_url: string;
   page_count: string;
+}
+
+interface StorageFile {
+  name: string;
+  created_at: string;
 }
 
 const emptyFormData: DocumentFormData = {
@@ -85,6 +91,40 @@ export default function DocumentManagement() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
+  const [loadingStorageFiles, setLoadingStorageFiles] = useState(false);
+
+  // Fetch storage files when dialog opens
+  useEffect(() => {
+    if (isDialogOpen) {
+      fetchStorageFiles();
+    }
+  }, [isDialogOpen]);
+
+  const fetchStorageFiles = async () => {
+    setLoadingStorageFiles(true);
+    try {
+      const { data, error } = await supabase.storage.from("documents").list("", {
+        limit: 100,
+        sortBy: { column: "created_at", order: "desc" },
+      });
+
+      if (error) throw error;
+      setStorageFiles(data || []);
+    } catch (error: any) {
+      console.error("Error fetching storage files:", error);
+    } finally {
+      setLoadingStorageFiles(false);
+    }
+  };
+
+  const selectStorageFile = async (fileName: string) => {
+    const { data: { publicUrl } } = supabase.storage.from("documents").getPublicUrl(fileName);
+    setFormData((prev) => ({ ...prev, pdf_url: publicUrl }));
+    
+    // Analyze the document with AI
+    await analyzeDocument(fileName);
+  };
 
   const openAddDialog = () => {
     setEditingDocument(null);
@@ -374,8 +414,39 @@ export default function DocumentManagement() {
               </div>
 
               {formData.pdf_url && (
-                <p className="text-xs text-green-500 truncate">✓ PDF uploaded</p>
+                <p className="text-xs text-green-500 truncate">✓ PDF selected: {formData.pdf_url.split('/').pop()}</p>
               )}
+
+              {/* Existing Storage Files */}
+              <div className="space-y-2">
+                <Label>Or select from existing PDFs</Label>
+                <ScrollArea className="h-32 border border-border rounded-md">
+                  {loadingStorageFiles ? (
+                    <div className="flex items-center justify-center h-full p-4">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : storageFiles.length === 0 ? (
+                    <div className="p-4 text-sm text-muted-foreground text-center">
+                      No files in storage
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-1">
+                      {storageFiles.map((file) => (
+                        <button
+                          key={file.name}
+                          type="button"
+                          onClick={() => selectStorageFile(file.name)}
+                          className="w-full flex items-center gap-2 p-2 text-left text-sm rounded hover:bg-muted transition-colors"
+                          disabled={isProcessing}
+                        >
+                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate">{file.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
