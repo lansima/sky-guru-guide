@@ -1,0 +1,4 @@
+project_id = "ustkulkwggktvcbjwuth"
+
+[functions.ai-flight-instructor]
+verify_jwt = false
