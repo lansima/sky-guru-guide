@@ -152,9 +152,10 @@ export default function DocumentManagement() {
     setIsSubmitting(true);
 
     try {
+      const aircraftId = formData.aircraft_id === "__none__" ? null : formData.aircraft_id || null;
       const documentData = {
         title: formData.title,
-        aircraft_id: formData.aircraft_id || null,
+        aircraft_id: aircraftId,
         category: formData.category,
         description: formData.description || null,
         pdf_url: formData.pdf_url,
@@ -270,7 +271,7 @@ export default function DocumentManagement() {
                     <SelectValue placeholder="Select aircraft..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {aircraft?.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
                         {a.manufacturer} {a.model}
