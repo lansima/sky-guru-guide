@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, FileUp, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAircraft } from "@/hooks/useAircraft";
 import { useDocuments, Document } from "@/hooks/useDocuments";
@@ -83,6 +83,8 @@ export default function DocumentManagement() {
   const [formData, setFormData] = useState<DocumentFormData>(emptyFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const openAddDialog = () => {
     setEditingDocument(null);
@@ -108,10 +110,47 @@ export default function DocumentManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const analyzeDocument = async (fileName: string) => {
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-document", {
+        body: { fileName },
+      });
 
+      if (error) throw error;
+
+      console.log("AI Analysis result:", data);
+
+      // Auto-fill form based on AI analysis
+      if (data.title) {
+        setFormData((prev) => ({ ...prev, title: data.title }));
+      }
+      if (data.category && DOCUMENT_CATEGORIES.includes(data.category)) {
+        setFormData((prev) => ({ ...prev, category: data.category }));
+      }
+
+      // Try to match aircraft
+      if (data.manufacturer && data.model && aircraft) {
+        const matchedAircraft = aircraft.find(
+          (a) =>
+            a.manufacturer.toLowerCase().includes(data.manufacturer.toLowerCase()) &&
+            a.model.toLowerCase().includes(data.model.toLowerCase())
+        );
+        if (matchedAircraft) {
+          setFormData((prev) => ({ ...prev, aircraft_id: matchedAircraft.id }));
+        }
+      }
+
+      toast({ title: "Document analyzed", description: "Form auto-filled based on AI analysis" });
+    } catch (error: any) {
+      console.error("Analysis error:", error);
+      // Don't show error toast, just proceed without auto-fill
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
     if (file.type !== "application/pdf") {
       toast({
         title: "Invalid file type",
@@ -130,12 +169,15 @@ export default function DocumentManagement() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("documents")
-        .getPublicUrl(fileName);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("documents").getPublicUrl(fileName);
 
-      setFormData({ ...formData, pdf_url: publicUrl });
+      setFormData((prev) => ({ ...prev, pdf_url: publicUrl }));
       toast({ title: "File uploaded successfully" });
+
+      // Analyze the document with AI
+      await analyzeDocument(file.name);
     } catch (error: any) {
       toast({
         title: "Upload failed",
@@ -147,12 +189,54 @@ export default function DocumentManagement() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+    }
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      const pdfFile = files.find((f) => f.type === "application/pdf");
+
+      if (pdfFile) {
+        await uploadFile(pdfFile);
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Please drop a PDF file.",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const aircraftId = formData.aircraft_id === "__none__" ? null : formData.aircraft_id || null;
+      const aircraftId =
+        formData.aircraft_id === "__none__" ? null : formData.aircraft_id || null;
       const documentData = {
         title: formData.title,
         aircraft_id: aircraftId,
@@ -222,12 +306,14 @@ export default function DocumentManagement() {
   };
 
   const formatCategory = (category: string) => {
-    return category.split("_").map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(" ");
+    return category
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const isLoading = documentsLoading || aircraftLoading;
+  const isProcessing = uploadingFile || isAnalyzing;
 
   return (
     <Card className="bg-card border-border">
@@ -240,29 +326,72 @@ export default function DocumentManagement() {
               Add Document
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card border-border max-w-lg">
+          <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingDocument ? "Edit Document" : "Add New Document"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Drag and Drop Zone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                  isDragOver
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                } ${isProcessing ? "pointer-events-none opacity-50" : ""}`}
+                onClick={() => !isProcessing && document.getElementById("pdf_upload")?.click()}
+              >
+                {isProcessing ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      {uploadingFile ? "Uploading..." : "Analyzing with AI..."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <FileUp className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Drag & drop a PDF here, or click to browse
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      AI will auto-categorize the document
+                    </p>
+                  </div>
+                )}
+                <Input
+                  id="pdf_upload"
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={isProcessing}
+                />
+              </div>
+
+              {formData.pdf_url && (
+                <p className="text-xs text-green-500 truncate">✓ PDF uploaded</p>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g., A320 Flight Crew Operating Manual"
                   required
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="aircraft">Aircraft (optional)</Label>
                 <Select
-                  value={formData.aircraft_id}
+                  value={formData.aircraft_id || "__none__"}
                   onValueChange={(value) =>
                     setFormData({ ...formData, aircraft_id: value })
                   }
@@ -280,13 +409,12 @@ export default function DocumentManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, category: value })
-                  }
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -300,48 +428,30 @@ export default function DocumentManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="pdf">PDF File</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="pdf_url"
-                    value={formData.pdf_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, pdf_url: e.target.value })
-                    }
-                    placeholder="PDF URL or upload a file"
-                    required
-                  />
-                  <Label
-                    htmlFor="pdf_upload"
-                    className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md cursor-pointer hover:bg-secondary/80 transition-colors"
-                  >
-                    <Upload className="h-4 w-4" />
-                    {uploadingFile ? "Uploading..." : "Upload"}
-                  </Label>
-                  <Input
-                    id="pdf_upload"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={uploadingFile}
-                  />
-                </div>
+                <Label htmlFor="pdf_url">PDF URL</Label>
+                <Input
+                  id="pdf_url"
+                  value={formData.pdf_url}
+                  onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
+                  placeholder="Upload a file or enter URL"
+                  required
+                />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="page_count">Page Count (optional)</Label>
                 <Input
                   id="page_count"
                   type="number"
                   value={formData.page_count}
-                  onChange={(e) =>
-                    setFormData({ ...formData, page_count: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, page_count: e.target.value })}
                   placeholder="e.g., 150"
                   min="1"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
                 <Textarea
@@ -354,6 +464,7 @@ export default function DocumentManagement() {
                   rows={3}
                 />
               </div>
+
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
@@ -362,7 +473,7 @@ export default function DocumentManagement() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting || uploadingFile}>
+                <Button type="submit" disabled={isSubmitting || isProcessing}>
                   {isSubmitting
                     ? "Saving..."
                     : editingDocument
