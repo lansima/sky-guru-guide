@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize2, Download, Loader2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -16,13 +16,16 @@ interface PDFViewerProps {
 
 export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
-  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [zoom, setZoom] = useState(100);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+    pageRefs.current = Array(numPages).fill(null);
     setLoading(false);
     setError(null);
   }, []);
@@ -35,37 +38,42 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 25, 200));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 25, 50));
-  const goToPrevPage = () => setPageNumber((prev) => Math.max(prev - 1, 1));
-  const goToNextPage = () => setPageNumber((prev) => Math.min(prev + 1, numPages));
 
   const scale = zoom / 100;
+
+  // Track current page based on scroll position
+  useEffect(() => {
+    const container = scrollContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!container) return;
+
+    const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.top + containerRect.height / 2;
+
+      for (let i = 0; i < pageRefs.current.length; i++) {
+        const pageEl = pageRefs.current[i];
+        if (pageEl) {
+          const pageRect = pageEl.getBoundingClientRect();
+          if (pageRect.top <= containerCenter && pageRect.bottom >= containerCenter) {
+            setCurrentPage(i + 1);
+            break;
+          }
+        }
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [numPages]);
 
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 border-b border-border bg-card">
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8" 
-            onClick={goToPrevPage}
-            disabled={pageNumber <= 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <span className="text-sm text-muted-foreground">
-            Page {pageNumber} of {numPages || "..."}
+            Page {currentPage} of {numPages || "..."}
           </span>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8" 
-            onClick={goToNextPage}
-            disabled={pageNumber >= numPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
 
         <h4 className="text-sm font-medium text-foreground truncate max-w-[300px]">
@@ -94,9 +102,9 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
         </div>
       </div>
 
-      {/* PDF Content */}
-      <ScrollArea className="flex-1 bg-secondary/30">
-        <div className="flex justify-center p-4">
+      {/* PDF Content - Continuous scroll */}
+      <ScrollArea ref={scrollContainerRef} className="flex-1 bg-secondary/30">
+        <div className="flex flex-col items-center gap-4 p-4">
           {loading && (
             <div className="flex items-center justify-center h-[60vh]">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -119,15 +127,22 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
             onLoadSuccess={onDocumentLoadSuccess}
             onLoadError={onDocumentLoadError}
             loading=""
-            className={loading ? "hidden" : ""}
+            className={loading ? "hidden" : "flex flex-col items-center gap-4"}
           >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              className="shadow-lg rounded-lg overflow-hidden"
-              renderTextLayer={true}
-              renderAnnotationLayer={true}
-            />
+            {Array.from(new Array(numPages), (_, index) => (
+              <div
+                key={`page_${index + 1}`}
+                ref={(el) => { pageRefs.current[index] = el; }}
+              >
+                <Page
+                  pageNumber={index + 1}
+                  scale={scale}
+                  className="shadow-lg rounded-lg overflow-hidden"
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                />
+              </div>
+            ))}
           </Document>
         </div>
       </ScrollArea>
