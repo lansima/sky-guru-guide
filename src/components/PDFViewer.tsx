@@ -103,8 +103,8 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
       </div>
 
       {/* PDF Content - Continuous scroll */}
-      <ScrollArea ref={scrollContainerRef} className="flex-1 bg-secondary/30">
-        <div className="flex flex-col items-center gap-4 p-4">
+      <ScrollArea ref={scrollContainerRef} className="flex-1 h-full bg-secondary/30">
+        <div className="flex flex-col items-center gap-4 p-4 min-h-full">
           {loading && (
             <div className="flex items-center justify-center h-[60vh]">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
