@@ -157,4 +157,24 @@
       linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
     background-size: 50px 50px;
   }
+
+  /* PDF Viewer scrollbar - more visible */
+  .pdf-scrollbar::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .pdf-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--secondary));
+    border-radius: 6px;
+  }
+
+  .pdf-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 6px;
+    border: 2px solid hsl(var(--secondary));
+  }
+
+  .pdf-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.7);
+  }
 }
