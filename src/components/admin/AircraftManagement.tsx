@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAircraft, Aircraft } from "@/hooks/useAircraft";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ export default function AircraftManagement() {
   const { data: aircraft, isLoading } = useAircraft();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -71,10 +72,15 @@ export default function AircraftManagement() {
   const [deletingAircraft, setDeletingAircraft] = useState<Aircraft | null>(null);
   const [formData, setFormData] = useState<AircraftFormData>(emptyFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const openAddDialog = () => {
     setEditingAircraft(null);
     setFormData(emptyFormData);
+    setImageFile(null);
+    setImagePreview(null);
     setIsDialogOpen(true);
   };
 
@@ -87,7 +93,52 @@ export default function AircraftManagement() {
       image_url: aircraft.image_url || "",
       description: aircraft.description || "",
     });
+    setImageFile(null);
+    setImagePreview(aircraft.image_url || null);
     setIsDialogOpen(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("aircraft-images")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from("aircraft-images")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   };
 
   const openDeleteDialog = (aircraft: Aircraft) => {
@@ -100,6 +151,15 @@ export default function AircraftManagement() {
     setIsSubmitting(true);
 
     try {
+      let imageUrl = formData.image_url;
+
+      // Upload new image if selected
+      if (imageFile) {
+        setIsUploading(true);
+        imageUrl = await uploadImage(imageFile);
+        setIsUploading(false);
+      }
+
       if (editingAircraft) {
         const { error } = await supabase
           .from("aircraft")
@@ -107,7 +167,7 @@ export default function AircraftManagement() {
             manufacturer: formData.manufacturer,
             model: formData.model,
             type: formData.type,
-            image_url: formData.image_url || null,
+            image_url: imageUrl || null,
             description: formData.description || null,
           })
           .eq("id", editingAircraft.id);
@@ -119,7 +179,7 @@ export default function AircraftManagement() {
           manufacturer: formData.manufacturer,
           model: formData.model,
           type: formData.type,
-          image_url: formData.image_url || null,
+          image_url: imageUrl || null,
           description: formData.description || null,
         });
 
@@ -130,6 +190,8 @@ export default function AircraftManagement() {
       queryClient.invalidateQueries({ queryKey: ["aircraft"] });
       setIsDialogOpen(false);
       setFormData(emptyFormData);
+      setImageFile(null);
+      setImagePreview(null);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -138,6 +200,7 @@ export default function AircraftManagement() {
       });
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
@@ -228,15 +291,55 @@ export default function AircraftManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image_url">Image URL (optional)</Label>
-                <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
-                  placeholder="https://example.com/image.jpg"
-                />
+                <Label>Aircraft Image (optional)</Label>
+                <div className="space-y-3">
+                  {/* Image preview */}
+                  {imagePreview && (
+                    <div className="relative w-full h-32 rounded-md overflow-hidden border border-border">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={clearImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Upload button */}
+                  <div className="flex gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {imagePreview ? "Change Image" : "Upload Image"}
+                    </Button>
+                  </div>
+                  
+                  {isUploading && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Uploading image...
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description (optional)</Label>
