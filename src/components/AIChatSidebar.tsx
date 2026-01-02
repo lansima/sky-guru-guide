@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Brain, Send, Loader2, Sparkles, User, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -164,9 +163,9 @@ export function AIChatSidebar({ documentContext }: AIChatSidebarProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-card border-l border-border">
+    <div className="flex flex-col h-full bg-card border-l border-border overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-secondary/30">
+      <div className="p-4 border-b border-border bg-secondary/30 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
             <Brain className="h-5 w-5 text-primary" />
@@ -193,8 +192,8 @@ export function AIChatSidebar({ documentContext }: AIChatSidebarProps) {
         </Button>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      {/* Messages - scrollable area */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="text-center py-8 space-y-4">
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -265,10 +264,10 @@ export function AIChatSidebar({ documentContext }: AIChatSidebarProps) {
             )}
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border flex-shrink-0">
         <div className="flex gap-2">
           <Textarea
             value={input}
