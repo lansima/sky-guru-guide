@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Upload, FileUp, Loader2, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, FileUp, Loader2, FileText, Files } from "lucide-react";
+import BulkUploadDialog from "./BulkUploadDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAircraft } from "@/hooks/useAircraft";
 import { useDocuments, Document } from "@/hooks/useDocuments";
@@ -93,6 +94,7 @@ export default function DocumentManagement() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [storageFiles, setStorageFiles] = useState<StorageFile[]>([]);
   const [loadingStorageFiles, setLoadingStorageFiles] = useState(false);
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
 
   // Fetch storage files when dialog opens
   useEffect(() => {
@@ -359,13 +361,22 @@ export default function DocumentManagement() {
     <Card className="bg-card border-border">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Document Management</CardTitle>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openAddDialog} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Document
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsBulkDialogOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Files className="h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openAddDialog} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Document
+              </Button>
+            </DialogTrigger>
           <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -555,7 +566,10 @@ export default function DocumentManagement() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </CardHeader>
+
+      <BulkUploadDialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen} />
       <CardContent>
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
