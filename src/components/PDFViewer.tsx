@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -94,8 +95,8 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
       </div>
 
       {/* PDF Content */}
-      <div className="flex-1 overflow-auto p-4 bg-secondary/30">
-        <div className="flex justify-center">
+      <ScrollArea className="flex-1 bg-secondary/30">
+        <div className="flex justify-center p-4">
           {loading && (
             <div className="flex items-center justify-center h-[60vh]">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -129,7 +130,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
             />
           </Document>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
