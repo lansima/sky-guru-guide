@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ZoomIn, ZoomOut, Maximize2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -43,7 +42,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
 
   // Track current page based on scroll position
   useEffect(() => {
-    const container = scrollContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    const container = scrollContainerRef.current;
     if (!container) return;
 
     const handleScroll = () => {
@@ -102,9 +101,13 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
         </div>
       </div>
 
-      {/* PDF Content - Continuous scroll */}
-      <ScrollArea ref={scrollContainerRef} className="flex-1 h-full bg-secondary/30">
-        <div className="flex flex-col items-center gap-4 p-4 min-h-full">
+      {/* PDF Content - Continuous scroll with native scrollbar */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto bg-secondary/30 pdf-scrollbar"
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        <div className="flex flex-col items-center gap-4 p-4">
           {loading && (
             <div className="flex items-center justify-center h-[60vh]">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -145,7 +148,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
             ))}
           </Document>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
