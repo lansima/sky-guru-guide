@@ -58,11 +58,11 @@ export default function DocumentViewer() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <Header />
       
       {/* Breadcrumb */}
-      <div className="border-b border-border bg-card/50">
+      <div className="border-b border-border bg-card/50 flex-shrink-0">
         <div className="container py-3 flex items-center gap-2 text-sm">
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
             Library
@@ -83,19 +83,23 @@ export default function DocumentViewer() {
         </div>
       </div>
 
-      {/* Split view */}
-      <div className="flex-1">
-        <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-120px)]">
+      {/* Split view - fills remaining height */}
+      <div className="flex-1 min-h-0">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* PDF Viewer */}
           <ResizablePanel defaultSize={65} minSize={40}>
-            <PDFViewer pdfUrl={document.pdf_url} title={document.title} />
+            <div className="h-full overflow-hidden">
+              <PDFViewer pdfUrl={document.pdf_url} title={document.title} />
+            </div>
           </ResizablePanel>
 
           <ResizableHandle withHandle className="bg-border hover:bg-primary/20 transition-colors" />
 
           {/* AI Chat Sidebar */}
           <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
-            <AIChatSidebar documentContext={documentContext} />
+            <div className="h-full overflow-hidden">
+              <AIChatSidebar documentContext={documentContext} />
+            </div>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
