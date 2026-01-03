@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Upload, FileUp, Loader2, X, Check, AlertCircle, Pencil } from "lucide-react";
+import { Upload, FileUp, Loader2, X, Check, AlertCircle, Plane } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAircraft } from "@/hooks/useAircraft";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ export default function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialo
   const [isDragOver, setIsDragOver] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [defaultAircraftId, setDefaultAircraftId] = useState<string>("__none__");
 
   const processFile = async (bulkFile: BulkFile): Promise<BulkFile> => {
     try {
@@ -150,7 +151,7 @@ export default function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialo
       status: "pending" as const,
       title: file.name.replace(/\.pdf$/i, ""),
       category: "manual",
-      aircraft_id: "",
+      aircraft_id: defaultAircraftId === "__none__" ? "" : defaultAircraftId,
       page_count: "",
     }));
 
@@ -182,7 +183,7 @@ export default function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialo
     e.stopPropagation();
     setIsDragOver(false);
     await addFiles(e.dataTransfer.files);
-  }, [aircraft]);
+  }, [aircraft, defaultAircraftId]);
 
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -269,6 +270,31 @@ export default function BulkUploadDialog({ open, onOpenChange }: BulkUploadDialo
         </DialogHeader>
 
         <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+          {/* Default Aircraft Selector */}
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-secondary/30">
+            <Plane className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <label className="text-sm font-medium">Default Aircraft</label>
+              <p className="text-xs text-muted-foreground">Pre-select aircraft for all uploaded files</p>
+            </div>
+            <Select
+              value={defaultAircraftId}
+              onValueChange={setDefaultAircraftId}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select aircraft" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None (Auto-detect)</SelectItem>
+                {aircraft?.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.manufacturer} {a.model}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Drop Zone */}
           <div
             onDragOver={handleDragOver}
