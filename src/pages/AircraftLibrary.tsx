@@ -5,6 +5,14 @@ import { useAircraft, Aircraft } from "@/hooks/useAircraft";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plane } from "lucide-react";
 
+// Manufacturer logos
+import atrLogo from "@/assets/logos/atr-logo.png";
+
+// Map manufacturer names to their logos
+const manufacturerLogos: Record<string, string> = {
+  "ATR": atrLogo,
+};
+
 export default function AircraftLibrary() {
   const { data: aircraft, isLoading } = useAircraft();
 
@@ -81,8 +89,8 @@ interface ManufacturerRowProps {
 }
 
 function ManufacturerRow({ manufacturer, aircraft }: ManufacturerRowProps) {
-  // Get the first aircraft's image as manufacturer logo placeholder
-  const logoImage = aircraft[0]?.image_url;
+  // Use manufacturer logo if available, otherwise show placeholder
+  const logoImage = manufacturerLogos[manufacturer];
 
   return (
     <div className="flex items-start gap-6 p-4 border-b border-border hover:bg-muted/30 transition-colors">
