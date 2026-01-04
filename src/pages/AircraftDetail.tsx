@@ -45,7 +45,7 @@ export default function AircraftDetail() {
           <h1 className="text-2xl font-bold text-foreground">Aircraft Not Found</h1>
           <p className="text-muted-foreground mt-2">The aircraft you're looking for doesn't exist.</p>
           <Button asChild className="mt-6">
-            <Link to="/">Back to Library</Link>
+            <Link to="/aircraft">Back to My Aircraft</Link>
           </Button>
         </main>
       </div>
@@ -57,10 +57,10 @@ export default function AircraftDetail() {
       <Header />
       <main className="container py-8">
         {/* Back button */}
-        <Link to="/">
+        <Link to="/aircraft">
           <Button variant="ghost" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground">
             <ChevronLeft className="h-4 w-4 mr-1" />
-            Back to Library
+            Back to My Aircraft
           </Button>
         </Link>
 
