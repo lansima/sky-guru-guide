@@ -2,19 +2,18 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { useAircraft, Aircraft } from "@/hooks/useAircraft";
+import { useManufacturerLogos } from "@/hooks/useManufacturerLogos";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plane } from "lucide-react";
 
-// Manufacturer logos
-import atrLogo from "@/assets/logos/atr-logo.png";
-
-// Map manufacturer names to their logos
-const manufacturerLogos: Record<string, string> = {
-  "ATR": atrLogo,
-};
-
 export default function AircraftLibrary() {
-  const { data: aircraft, isLoading } = useAircraft();
+  const { data: aircraft, isLoading: isLoadingAircraft } = useAircraft();
+  const { data: logos, isLoading: isLoadingLogos } = useManufacturerLogos();
+
+  // Create a map of manufacturer logos
+  const logoMap = useMemo(() => {
+    return new Map(logos?.map((l) => [l.manufacturer, l.logo_url]) || []);
+  }, [logos]);
 
   // Group aircraft by manufacturer
   const groupedAircraft = useMemo(() => {
@@ -31,6 +30,7 @@ export default function AircraftLibrary() {
   }, [aircraft]);
 
   const manufacturers = Object.keys(groupedAircraft).sort();
+  const isLoading = isLoadingAircraft || isLoadingLogos;
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,6 +74,7 @@ export default function AircraftLibrary() {
                 key={manufacturer}
                 manufacturer={manufacturer}
                 aircraft={groupedAircraft[manufacturer]}
+                logoUrl={logoMap.get(manufacturer)}
               />
             ))
           )}
@@ -86,19 +87,17 @@ export default function AircraftLibrary() {
 interface ManufacturerRowProps {
   manufacturer: string;
   aircraft: Aircraft[];
+  logoUrl?: string;
 }
 
-function ManufacturerRow({ manufacturer, aircraft }: ManufacturerRowProps) {
-  // Use manufacturer logo if available, otherwise show placeholder
-  const logoImage = manufacturerLogos[manufacturer];
-
+function ManufacturerRow({ manufacturer, aircraft, logoUrl }: ManufacturerRowProps) {
   return (
     <div className="flex items-start gap-6 p-4 border-b border-border hover:bg-muted/30 transition-colors">
       {/* Manufacturer Logo/Image */}
       <div className="w-28 flex-shrink-0 flex items-center justify-center">
-        {logoImage ? (
+        {logoUrl ? (
           <img
-            src={logoImage}
+            src={logoUrl}
             alt={manufacturer}
             className="max-h-12 max-w-full object-contain"
           />
