@@ -1,33 +1,36 @@
-import { Plane, BookOpen, Brain } from "lucide-react";
+import { Plane } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Aircraft Manuals", href: "/#manuals" },
+  { label: "Systems Docs", href: "/#systems" },
+  { label: "AI Instructor", href: "/#ai-instructor" },
+  { label: "Contact", href: "/#contact" },
+];
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <header className="absolute top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-            <Plane className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-semibold text-foreground">AeroTech Library</span>
-            <span className="text-xs text-muted-foreground">Technical Documentation</span>
+        <Link to="/" className="flex items-center gap-2 group">
+          <Plane className="h-6 w-6 text-primary" />
+          <div className="flex flex-col leading-none">
+            <span className="text-lg font-bold text-white tracking-tight">SMART</span>
+            <span className="text-lg font-bold text-white tracking-tight">COCKPIT</span>
           </div>
         </Link>
 
-        <nav className="flex items-center gap-6">
-          <Link 
-            to="/" 
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <BookOpen className="h-4 w-4" />
-            Library
-          </Link>
-          <div className="flex items-center gap-2 text-sm font-medium text-primary">
-            <Brain className="h-4 w-4" />
-            AI Instructor
-          </div>
+        <nav className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
       </div>
     </header>
