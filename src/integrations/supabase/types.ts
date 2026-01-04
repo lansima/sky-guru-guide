@@ -91,6 +91,30 @@ export type Database = {
           },
         ]
       }
+      manufacturer_logos: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string
+          manufacturer: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url: string
+          manufacturer: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string
+          manufacturer?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_bookmarks: {
         Row: {
           created_at: string

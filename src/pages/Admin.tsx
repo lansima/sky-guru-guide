@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plane, FileText } from "lucide-react";
+import { ArrowLeft, Plane, FileText, Image } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AircraftManagement from "@/components/admin/AircraftManagement";
 import DocumentManagement from "@/components/admin/DocumentManagement";
+import { LogoManagement } from "@/components/admin/LogoManagement";
 
 export default function Admin() {
   return (
@@ -35,6 +35,10 @@ export default function Admin() {
               <FileText className="h-4 w-4" />
               Documents
             </TabsTrigger>
+            <TabsTrigger value="logos" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Logos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="aircraft">
@@ -43,6 +47,10 @@ export default function Admin() {
 
           <TabsContent value="documents">
             <DocumentManagement />
+          </TabsContent>
+
+          <TabsContent value="logos">
+            <LogoManagement />
           </TabsContent>
         </Tabs>
       </main>
