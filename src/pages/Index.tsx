@@ -1,17 +1,20 @@
-import { useState } from "react";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { FeatureCards } from "@/components/FeatureCards";
+import { AIInstructorSection } from "@/components/AIInstructorSection";
 import { AircraftGrid } from "@/components/AircraftGrid";
 
 const Index = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header />
       <main>
-        <HeroSection onSearch={setSearchQuery} />
-        <AircraftGrid searchQuery={searchQuery} />
+        <HeroSection />
+        <FeatureCards />
+        <section id="models" className="py-16 bg-white">
+          <AircraftGrid searchQuery="" />
+        </section>
+        <AIInstructorSection />
       </main>
     </div>
   );
