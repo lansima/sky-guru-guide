@@ -18,16 +18,19 @@ export function Header() {
 
         <nav className="flex items-center gap-6">
           <Link 
-            to="/" 
+            to="/aircraft" 
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <BookOpen className="h-4 w-4" />
-            Library
+            My Aircraft
           </Link>
-          <div className="flex items-center gap-2 text-sm font-medium text-primary">
+          <Link 
+            to="/" 
+            className="flex items-center gap-2 text-sm font-medium text-primary"
+          >
             <Brain className="h-4 w-4" />
             AI Instructor
-          </div>
+          </Link>
         </nav>
       </div>
     </header>

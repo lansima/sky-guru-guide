@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import AircraftLibrary from "./pages/AircraftLibrary";
 import AircraftDetail from "./pages/AircraftDetail";
 import DocumentViewer from "./pages/DocumentViewer";
 import Admin from "./pages/Admin";
@@ -19,6 +20,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/aircraft" element={<AircraftLibrary />} />
           <Route path="/aircraft/:id" element={<AircraftDetail />} />
           <Route path="/document/:id" element={<DocumentViewer />} />
           <Route path="/admin" element={<Admin />} />

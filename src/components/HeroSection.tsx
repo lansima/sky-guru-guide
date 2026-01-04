@@ -1,28 +1,9 @@
-import { useState } from "react";
-import { Search, Plane, FileText, Brain } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plane, FileText, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-interface HeroSectionProps {
-  onSearch: (query: string) => void;
-}
-
-const manufacturers = ["Boeing", "Airbus", "Bombardier", "Embraer"];
-
-export function HeroSection({ onSearch }: HeroSectionProps) {
-  const [searchValue, setSearchValue] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(searchValue);
-  };
-
-  const handleQuickFilter = (manufacturer: string) => {
-    setSearchValue(manufacturer);
-    onSearch(manufacturer);
-  };
-
+export function HeroSection() {
   return (
     <section className="relative overflow-hidden border-b border-border/50">
       {/* Background pattern */}
@@ -32,7 +13,7 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
       {/* Glow effect */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
 
-      <div className="relative container py-20 md:py-28">
+      <div className="relative container py-16 md:py-24">
         <div className="mx-auto max-w-3xl text-center space-y-8">
           {/* Badge */}
           <div className="flex justify-center">
@@ -54,40 +35,14 @@ export function HeroSection({ onSearch }: HeroSectionProps) {
             </p>
           </div>
 
-          {/* Search bar */}
-          <form onSubmit={handleSearch} className="relative max-w-xl mx-auto">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-primary/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative flex items-center bg-card border border-border rounded-xl overflow-hidden shadow-lg">
-                <Search className="absolute left-4 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search aircraft by manufacturer or model..."
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  className="flex-1 pl-12 pr-4 h-14 bg-transparent border-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-                />
-                <Button type="submit" size="lg" className="m-2 px-6">
-                  Search
-                </Button>
-              </div>
-            </div>
-          </form>
-
-          {/* Quick filters */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-sm text-muted-foreground mr-2">Quick search:</span>
-            {manufacturers.map((manufacturer) => (
-              <Button
-                key={manufacturer}
-                variant="ghost"
-                size="sm"
-                onClick={() => handleQuickFilter(manufacturer)}
-                className="rounded-full border border-border/50 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-              >
-                {manufacturer}
-              </Button>
-            ))}
+          {/* CTA Button */}
+          <div className="pt-4">
+            <Button asChild size="lg" className="px-8 h-12 text-base">
+              <Link to="/aircraft">
+                <Plane className="h-5 w-5 mr-2" />
+                Browse Aircraft Library
+              </Link>
+            </Button>
           </div>
 
           {/* Stats */}
