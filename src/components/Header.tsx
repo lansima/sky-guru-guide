@@ -1,4 +1,4 @@
-import { Plane, BookOpen, Brain } from "lucide-react";
+import { Plane, BookOpen, Brain, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +23,13 @@ export function Header() {
           >
             <BookOpen className="h-4 w-4" />
             My Aircraft
+          </Link>
+          <Link
+            to="/knowledge-base"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <GraduationCap className="h-4 w-4" />
+            Pilot Resources
           </Link>
           <Link 
             to="/" 

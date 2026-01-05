@@ -9,6 +9,8 @@ import AircraftDetail from "./pages/AircraftDetail";
 import DocumentViewer from "./pages/DocumentViewer";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import PilotResources from "./pages/PilotResources";
+import Disclaimer from "./pages/Disclaimer";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/aircraft/:id" element={<AircraftDetail />} />
           <Route path="/document/:id" element={<DocumentViewer />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/knowledge-base" element={<PilotResources />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
